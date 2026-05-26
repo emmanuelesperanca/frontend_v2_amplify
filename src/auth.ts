@@ -38,8 +38,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
      */
     jwt({ token, account, profile }) {
       if (profile) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        token.userId = (profile as any).oid ?? profile.sub ?? token.sub;
+        token.userId = (profile as { oid?: string }).oid ?? profile.sub ?? token.sub;
       }
       if (account) {
         token.accessToken = account.access_token;
