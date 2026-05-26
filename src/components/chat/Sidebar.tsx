@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import { useState, useEffect } from 'react';
 import { Plus, ChevronLeft, Trash2, LayoutGrid, LogOut } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserId';
 import { AGENTS } from '@/lib/agents';
@@ -30,13 +31,32 @@ interface Props {
 
 function UserAvatar({ collapsed }: { collapsed: boolean }) {
   const { name, email, initials } = useUserProfile();
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Only attempt photo fetch when we have an authenticated session
+    if (!name && !email) return;
+    fetch('/api/user/photo')
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.blob();
+      })
+      .then((blob) => {
+        if (blob) setPhotoUrl(URL.createObjectURL(blob));
+      })
+      .catch(() => {/* no photo — fall back to initials */});
+  }, [name, email]);
+
   if (!name && !email) return null;
 
   return (
     <div className={cn('flex w-full items-center gap-2 min-w-0', collapsed && 'justify-center')}>
-      {/* Avatar circle */}
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 to-teal-700 text-[10px] font-bold text-white">
-        {initials || '?'}
+      {/* Avatar — photo when available, initials otherwise */}
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full overflow-hidden bg-gradient-to-br from-emerald-600 to-teal-700 text-[10px] font-bold text-white">
+        {photoUrl
+          ? <img src={photoUrl} alt={name} className="h-full w-full object-cover" />
+          : (initials || '?')
+        }
       </div>
 
       {!collapsed && (
